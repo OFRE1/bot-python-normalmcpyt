@@ -1,4 +1,8 @@
 import os
+
+
+# TOKEN GET BOT
+BOT_TOKEN = os.getenv("DISCORD_TOKEN")
 from threading import Thread
 import discord
 from discord.ext import commands
@@ -6,9 +10,7 @@ from flask import Flask
 
 # ================= CẤU HÌNH TOKEN & ROLE =================
 VERIFIED_ROLE_ID = 1502170743235149864
-BOT_TOKEN = (
-    "MTQ2MTM3MDE0MDExMzM2M2MwNg.G9OGar.hAQnKjyNGDHd3hZbMswXoQqyt0Lz_oZGR40DF4"
-)
+
 
 # ================= FLASK SERVER (MỞ CỔNG CHO RENDER) =================
 app = Flask("")
