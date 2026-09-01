@@ -1,19 +1,40 @@
+import os
+from threading import Thread
 import discord
 from discord.ext import commands
+from flask import Flask
 
-# Cấu hình Intents (Bắt buộc phải bật intents.members)
+# ================= CẤU HÌNH TOKEN & ROLE =================
+VERIFIED_ROLE_ID = 1502170743235149864
+BOT_TOKEN = (
+    "MTQ2MTM3MDE0MDExMzM2M2MwNg.G9OGar.hAQnKjyNGDHd3hZbMswXoQqyt0Lz_oZGR40DF4"
+)
+
+# ================= FLASK SERVER (MỞ CỔNG CHO RENDER) =================
+app = Flask("")
+
+
+@app.route("/")
+def home():
+  return "Bot is running 24/7!"
+
+
+def run():
+  port = int(os.environ.get("PORT", 8080))
+  app.run(host="0.0.0.0", port=port)
+
+
+def keep_alive():
+  t = Thread(target=run)
+  t.start()
+
+
+# ================= KHỞI TẠO BOT & GIAO DIỆN =================
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
-
-# === ĐIỀN THÔNG TIN CỦA BẠN VÀO ĐÂY ===
-VERIFIED_ROLE_ID = 1502170743235149864  # Thay bằng ID của Role "Thành viên" sau khi verify
-BOT_TOKEN = "MTQ2MTM3MDE0MDEzMzE2MzMwNg.G90Gar.hAQnKjyNGDHd3hZbMswXoQqyt0Lz_oZGR40DF4"  # Thay bằng Token Bot Discord của bạn
-# ======================================
-
-
 class VerifyView(discord.ui.View):
 
   def __init__(self):
