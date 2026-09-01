@@ -2,7 +2,9 @@ import os
 
 
 # TOKEN GET BOT
-BOT_TOKEN = os.getenv("DISCORD_TOKEN")
+BOT_TOKEN = (
+  MTQ2MTM3MDE0MDEzMzE2MzMwNg.GzjDyn.F1OQe7L24zGqox1Q-BwfD5OYGeKY-F7uMdZwYs
+)
 from threading import Thread
 import discord
 from discord.ext import commands
