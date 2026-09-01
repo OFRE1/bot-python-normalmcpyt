@@ -100,4 +100,6 @@ async def setup_verify(ctx):
 
 
 # Chạy bot
-bot.run(BOT_TOKEN)
+if __name__ == "__main__":
+  keep_alive()  # Kích hoạt web server ngầm
+  bot.run(BOT_TOKEN)  # Chạy bot
