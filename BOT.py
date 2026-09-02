@@ -102,7 +102,83 @@ async def setup_verify(ctx):
   await ctx.send(embed=embed, view=VerifyView())
   await ctx.message.delete()  # Xóa tin nhắn lệnh !setup_verify cho sạch kênh
 
+import discord
+from discord.ext import commands
 
+# Giả sử bot đã được khởi tạo bằng: bot = commands.Bot(command_prefix="!", ...)
+
+
+# 1. Lệnh !coin (Tung đồng xu)
+@bot.command(name="coin")
+async def coin_flip(ctx):
+  import random
+
+  result = random.choice(["Mặt Ngửa (Heads) 🪙", "Mặt Sấp (Tails) 🪙"])
+  await ctx.send(f"Kết quả tung đồng xu cho {ctx.author.mention}: **{result}**")
+
+
+# 2. Lệnh !snipe (Xem tin nhắn bị xóa gần đây)
+# Cần bật Message Content Intent ở Discord Developer Portal nhé
+snipe_cache = {}
+
+
+@bot.event
+async def on_message_delete(message):
+  if message.author.bot:
+    return
+  snipe_cache[message.channel.id] = {
+      "content": message.content,
+      "author": message.author,
+      "time": message.created_at,
+  }
+
+
+@bot.command(name="snipe")
+async def snipe(ctx):
+  deleted = snipe_cache.get(ctx.channel.id)
+  if not deleted:
+    await ctx.send("Làm gì có ai xóa tin nhắn nào gần đây đâu mà hớt hải! 👀")
+    return
+
+  embed = discord.Embed(
+      title="🎯 Bắt được quả tang tin nhắn vừa bay màu:",
+      description=deleted["content"],
+      color=discord.Color.red(),
+  )
+  embed.set_author(name=str(deleted["author"]), icon_url=deleted["author"].avatar.url if deleted["author"].avatar else None)
+  await ctx.send(embed=embed)
+
+
+# 3. Lệnh !help (Hiện list lệnh - custom lại cho gọn)
+@bot.command(name="help")
+async def custom_help(ctx):
+  embed = discord.Embed(
+      title="📜 Danh sách lệnh của hệ thống",
+      color=discord.Color.blue(),
+  )
+  embed.add_field(name="!coin", value="Tung đồng xu sấp/ngửa may rủi.", inline=False)
+  embed.add_field(name="!snipe", value="Xem lại tin nhắn vừa bị xóa trong kênh.", inline=False)
+  embed.add_field(name="!search youtube <từ khóa>", value="Tìm kiếm nhanh trên YouTube.", inline=False)
+  embed.add_field(name="!search google <từ khóa>", value="Tra cứu thông tin trên Google.", inline=False)
+  await ctx.send(embed=embed)
+
+
+# 4 & 5. Lệnh !search youtube và google
+@bot.command(name="search")
+async def search_query(ctx, platform: str, *, query: str):
+  import urllib.parse
+
+  query_encoded = urllib.parse.quote(query)
+  platform = platform.lower()
+
+  if platform == "youtube":
+    url = f"https://www.youtube.com/results?search_query={query_encoded}"
+    await ctx.send(f"📺 Kết quả tìm kiếm YouTube cho **'{query}'**: {url}")
+  elif platform == "google":
+    url = f"https://www.google.com/search?q={query_encoded}"
+    await ctx.send(f"🔍 Kết quả tra cứu Google cho **'{query}'**: {url}")
+  else:
+    await ctx.send("⚠️ Nền tảng không hợp lệ! Cú pháp đúng: `!search youtube <từ khóa>` hoặc `!search google <từ khóa>`.")
 # Chạy bot
 if __name__ == "__main__":
   keep_alive()  # Kích hoạt web server ngầm
