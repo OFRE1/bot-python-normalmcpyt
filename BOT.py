@@ -1,124 +1,102 @@
 import os
-
-
-# TOKEN GET BOT
-BOT_TOKEN = (
-  "MTQ2MTM3MDE0MDEzMzE2MzMwNg.GzjDyn.F1OQe7L24zGqox1Q-BwfD5OYGeKY-F7uMdZwYs"
-)
+import random
+import urllib.parse
 from threading import Thread
 import discord
 from discord.ext import commands
 from flask import Flask
 
-# ================= CẤU HÌNH TOKEN & ROLE =================
-VERIFIED_ROLE_ID = 1502170743235149864
-
-
-# ================= FLASK SERVER (MỞ CỔNG CHO RENDER) =================
+# ==================== FLASK SERVER (MỞ CỔNG CHỜ 24/7) ====================
 app = Flask("")
 
 
 @app.route("/")
 def home():
-  return "Bot is running 24/7!"
+  return "Bot is alive and running!"
 
 
-def run():
-  port = int(os.environ.get("PORT", 8080))
-  app.run(host="0.0.0.0", port=port)
+def run_flask():
+  app.run(host="0.0.0.0", port=8080)
 
 
 def keep_alive():
-  t = Thread(target=run)
+  t = Thread(target=run_flask)
   t.start()
 
 
-# ================= KHỞI TẠO BOT & GIAO DIỆN =================
+# ==================== CẤU HÌNH BOT ====================
+# Bật các Intents cần thiết
 intents = discord.Intents.default()
-intents.members = True
 intents.message_content = True
+intents.guilds = True
+intents.members = True
 
+# Khởi tạo bot với tiền tố lệnh là "!"
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+# FIX LỖI TRÙNG LỆNH: Xóa lệnh help mặc định đi để nhường chỗ cho lệnh custom
+bot.remove_command("help")
+
+# ID Role xác thực (đã cấu hình từ trước)
+VERIFIED_ROLE_ID = 1502170743235149864
+
+
+# ==================== VIEW NÚT XÁC THỰC (VERIFY) ====================
 class VerifyView(discord.ui.View):
 
   def __init__(self):
-    super().__init__(timeout=None)  # Giữ nút tồn tại vĩnh viễn không hết hạn
+    super().__init__(timeout=None)  # Vĩnh viễn không hết hạn nút
 
   @discord.ui.button(
       label="Xác thực ngay",
       style=discord.ButtonStyle.green,
-      custom_id="verify_button_click",
+      custom_id="verify_button",
       emoji="✅",
   )
-  async def verify_callback(
+  async def verify_button(
       self, interaction: discord.Interaction, button: discord.ui.Button
   ):
-    # Lấy role từ ID server
-    role = interaction.guild.get_role(VERIFIED_ROLE_ID)
+    # Tránh lỗi 3 giây timeout của Discord
+    await interaction.response.defer(ephemeral=True)
 
+    role = interaction.guild.get_role(VERIFIED_ROLE_ID)
     if not role:
-      await interaction.response.send_message(
-          "⚠️ Lỗi: Không tìm thấy Role xác thực trong cài đặt bot!",
+      await interaction.followup.send(
+          "⚠️ Lỗi hệ thống: Không tìm thấy Role xác thực trong Server!",
           ephemeral=True,
       )
       return
 
-    # Kiểm tra xem user đã có role đó chưa
     if role in interaction.user.roles:
-      await interaction.response.send_message(
-          "😄 Bạn đã xác thực từ trước rồi mà!", ephemeral=True
+      await interaction.followup.send(
+          "✨ Bạn đã được xác thực từ trước rồi mà!", ephemeral=True
       )
     else:
-      # Thêm role cho thành viên
       await interaction.user.add_roles(role)
-      await interaction.response.send_message(
-          "🎉 **Xác thực thành công!** Chào mừng bạn đã đến với server.",
+      await interaction.followup.send(
+          "🎉 Xác thực thành công! Toàn bộ kênh chat đã được mở khóa.",
           ephemeral=True,
       )
 
 
+# ==================== SỰ KIỆN KHI BOT SẴN SÀNG ====================
 @bot.event
 async def on_ready():
-  print(f"Bot {bot.user} đã sẵn sàng hoạt động!")
+  print(f"Logged in as {bot.user.name} (ID: {bot.user.id})")
+  print("Bot is ready and connected to Discord!")
 
 
-@bot.command()
-@commands.has_permissions(administrator=True)
-async def setup_verify(ctx):
-  """Lệnh gửi khung Embed xác thực ra kênh hiện tại (Chỉ Admin dùng được)"""
-  embed = discord.Embed(
-      title="🛡️ XÁC THỰC TÀI KHOẢN (VERIFICATION)",
-      description=(
-          "Chào mừng bạn đến với server!\n\n"
-          "Để mở khóa toàn bộ kênh chat và tham gia trò chuyện cùng mọi người,"
-          " vui lòng nhấn nút **Xác thực ngay** bên dưới."
-          "Kênh chỉ hiển thị với member chưa xác minh"
-      ),
-      color=discord.Color.brand_green(),
-  )
-  embed.set_footer(text="Hệ thống bảo mật tự động của server.")
-
-  # Gửi tin nhắn kèm theo nút bấm (View)
-  await ctx.send(embed=embed, view=VerifyView())
-  await ctx.message.delete()  # Xóa tin nhắn lệnh !setup_verify cho sạch kênh
-
-import discord
-from discord.ext import commands
-
-# Giả sử bot đã được khởi tạo bằng: bot = commands.Bot(command_prefix="!", ...)
+# ==================== CÁC LỆNH MỚI BỔ SUNG ====================
 
 
 # 1. Lệnh !coin (Tung đồng xu)
 @bot.command(name="coin")
 async def coin_flip(ctx):
-  import random
-
   result = random.choice(["Mặt Ngửa (Heads) 🪙", "Mặt Sấp (Tails) 🪙"])
   await ctx.send(f"Kết quả tung đồng xu cho {ctx.author.mention}: **{result}**")
 
 
 # 2. Lệnh !snipe (Xem tin nhắn bị xóa gần đây)
-# Cần bật Message Content Intent ở Discord Developer Portal nhé
 snipe_cache = {}
 
 
@@ -129,7 +107,6 @@ async def on_message_delete(message):
   snipe_cache[message.channel.id] = {
       "content": message.content,
       "author": message.author,
-      "time": message.created_at,
   }
 
 
@@ -145,29 +122,45 @@ async def snipe(ctx):
       description=deleted["content"],
       color=discord.Color.red(),
   )
-  embed.set_author(name=str(deleted["author"]), icon_url=deleted["author"].avatar.url if deleted["author"].avatar else None)
+  embed.set_author(
+      name=str(deleted["author"]),
+      icon_url=deleted["author"].avatar.url
+      if deleted["author"].avatar
+      else None,
+  )
   await ctx.send(embed=embed)
 
 
-# 3. Lệnh !help (Hiện list lệnh - custom lại cho gọn)
+# 3. Lệnh !help (Hiện list lệnh đã custom)
 @bot.command(name="help")
 async def custom_help(ctx):
   embed = discord.Embed(
-      title="📜 Danh sách lệnh của hệ thống",
-      color=discord.Color.blue(),
+      title="📜 Danh sách lệnh hệ thống", color=discord.Color.blue()
   )
-  embed.add_field(name="!coin", value="Tung đồng xu sấp/ngửa may rủi.", inline=False)
-  embed.add_field(name="!snipe", value="Xem lại tin nhắn vừa bị xóa trong kênh.", inline=False)
-  embed.add_field(name="!search youtube <từ khóa>", value="Tìm kiếm nhanh trên YouTube.", inline=False)
-  embed.add_field(name="!search google <từ khóa>", value="Tra cứu thông tin trên Google.", inline=False)
+  embed.add_field(
+      name="!coin", value="Tung đồng xu sấp/ngửa may rủi.", inline=False
+  )
+  embed.add_field(
+      name="!snipe",
+      value="Xem lại tin nhắn vừa bị xóa gần đây trong kênh.",
+      inline=False,
+  )
+  embed.add_field(
+      name="!search youtube <từ khóa>",
+      value="Tìm kiếm nhanh video trên YouTube.",
+      inline=False,
+  )
+  embed.add_field(
+      name="!search google <từ khóa>",
+      value="Tra cứu thông tin trên Google.",
+      inline=False,
+  )
   await ctx.send(embed=embed)
 
 
 # 4 & 5. Lệnh !search youtube và google
 @bot.command(name="search")
 async def search_query(ctx, platform: str, *, query: str):
-  import urllib.parse
-
   query_encoded = urllib.parse.quote(query)
   platform = platform.lower()
 
@@ -178,8 +171,19 @@ async def search_query(ctx, platform: str, *, query: str):
     url = f"https://www.google.com/search?q={query_encoded}"
     await ctx.send(f"🔍 Kết quả tra cứu Google cho **'{query}'**: {url}")
   else:
-    await ctx.send("⚠️ Nền tảng không hợp lệ! Cú pháp đúng: `!search youtube <từ khóa>` hoặc `!search google <từ khóa>`.")
-# Chạy bot
+    await ctx.send(
+        "⚠️ Nền tảng không hợp lệ! Cú pháp đúng: `!search youtube <từ"
+        " khóa>` hoặc `!search google <từ khóa>`."
+    )
+
+
+# ==================== KHỞI ĐỘNG BOT ====================
 if __name__ == "__main__":
-  keep_alive()  # Kích hoạt web server ngầm
-  bot.run(BOT_TOKEN)  # Chạy bot
+  # Chạy Flask server để qua mặt cổng port của Render
+  keep_alive()
+
+  # Token bảo mật (đã được bọc ngoặc kép an toàn)
+  BOT_TOKEN = (
+      "MTQ2MTM3MDE0MDEzMzE2MzMwNg.GzjDyn.F1OQe7L24zGqox1Q-BwfD5OYGeKY-F7uMdZwYs"
+  )
+  bot.run(BOT_TOKEN)
