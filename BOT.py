@@ -42,42 +42,34 @@ VERIFIED_ROLE_ID = 1502170743235149864
 
 
 # ==================== VIEW NÚT XÁC THỰC (VERIFY) ====================
-class VerifyView(discord.ui.View):
+@bot.command(name="verify")
+@commands.has_permissions(manage_guild=True)  # Hoặc manage_roles=True
+async def send_verify_panel(ctx):
+  try:
+    await ctx.message.delete()
+  except:
+    pass
 
-  def __init__(self):
-    super().__init__(timeout=None)  # Vĩnh viễn không hết hạn nút
-
-  @discord.ui.button(
-      label="Xác thực ngay",
-      style=discord.ButtonStyle.green,
-      custom_id="verify_button",
-      emoji="✅",
+  embed = discord.Embed(
+      title="🛡️ XÁC THỰC THÀNH VIÊN",
+      description=(
+          "Chào mừng cậu đến với Server!\n\nBấm nút **✅ Xác thực ngay** bên"
+          " dưới để nhận role và mở khóa toàn bộ kênh chat nhé."
+      ),
+      color=discord.Color.green(),
   )
-  async def verify_button(
-      self, interaction: discord.Interaction, button: discord.ui.Button
-  ):
-    # Tránh lỗi 3 giây timeout của Discord
-    await interaction.response.defer(ephemeral=True)
 
-    role = interaction.guild.get_role(VERIFIED_ROLE_ID)
-    if not role:
-      await interaction.followup.send(
-          "⚠️ Lỗi hệ thống: Không tìm thấy Role xác thực trong Server!",
-          ephemeral=True,
-      )
-      return
+  await ctx.send(embed=embed, view=VerifyView())
 
-    if role in interaction.user.roles:
-      await interaction.followup.send(
-          "✨ Bạn đã được xác thực từ trước rồi mà!", ephemeral=True
-      )
-    else:
-      await interaction.user.add_roles(role)
-      await interaction.followup.send(
-          "🎉 Xác thực thành công! Toàn bộ kênh chat đã được mở khóa.",
-          ephemeral=True,
-      )
 
+# Bắt lỗi nếu member thường lanh chanh gõ lệnh
+@send_verify_panel.error
+async def send_verify_panel_error(ctx, error):
+  if isinstance(error, commands.MissingPermissions):
+    await ctx.send(
+        "❌ Whoops, bạn không phải quản lý. Lệnh này không hoạt động",
+        delete_after=5,
+    )
 
 # ==================== SỰ KIỆN KHI BOT SẴN SÀNG ====================
 @bot.event
