@@ -1,11 +1,19 @@
-import os
 import asyncio
+import os
+from threading import Thread
 import discord
 from discord.ext import commands
 from flask import Flask
-from threading import Thread
 
-# ================= 1. CẤU HÌNH WEB SERVER GIỮ SỐNG (RENDER/RAILWAY) =================
+# ================= 1. CẤU HÌNH DISCORD BOT (Đưa lên đầu tiên) =================
+intents = discord.Intents.default()
+intents.message_content = True
+intents.members = True
+
+# Khởi tạo bot trước thì bên dưới mới gọi được bot.event hay bot.add_view
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+# ================= 2. CẤU HÌNH WEB SERVER (FLASK) =================
 app = Flask(__name__)
 
 
@@ -15,7 +23,6 @@ def home():
 
 
 def run_web():
-  # Lấy cổng port do Cloud tự cấp, mặc định chạy port 8080
   port = int(os.environ.get("PORT", 8080))
   app.run(host="0.0.0.0", port=port)
 
@@ -24,6 +31,15 @@ def keep_alive():
   t = Thread(target=run_web)
   t.daemon = True
   t.start()
+
+
+# ================= 3. SS SỰ KIỆN ON_READY =================
+@bot.event
+async def on_ready():
+  await asyncio.sleep(4)
+  bot.add_view(VerifyView())  # Lúc này bot đã tồn tại nên gọi thoải mái
+  print(f"Logged in as {bot.user.name} (ID: {bot.user.id})")
+  print("Bot đã sẵn sàng và kích hoạt View thành công!")
 
 
 # ================= 2. CẤU HÌNH DISCORD BOT =================
