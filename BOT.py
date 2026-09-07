@@ -51,7 +51,7 @@ intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Thay ID Role xác thực của server cậu vào đây
-VERIFIED_ROLE_ID = 123456789012345678  # <-- ĐIỀN ID ROLE CỦA CẬU VÀO ĐÂY
+VERIFIED_ROLE_ID = 1502170743235149864 # <-- ĐIỀN ID ROLE CỦA CẬU VÀO ĐÂY
 
 # Biến lưu trữ tạm cho tính năng Snipe theo từng Channel
 snipe_cache = {}
