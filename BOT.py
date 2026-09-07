@@ -116,7 +116,7 @@ async def send_verify_panel(ctx):
 
   embed = discord.Embed(
       title="🛡️ XÁC THỰC THÀNH VIÊN",
-      description="DEV ĐANG THỬ NGHIỆM. CLICK ✅ ĐỂ TEST",
+      description="Bấm vào nút màu xanh để xác minh. Kênh chỉ hiện với người chưa xác minh",
       color=discord.Color.green(),
   )
 
